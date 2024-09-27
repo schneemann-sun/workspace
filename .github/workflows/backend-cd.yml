@@ -33,9 +33,9 @@ jobs:
       with:
         python-version: '3.10'
     - run: |
-      cd starter/backend
-      pipenv install
-      pipenv run test
+        cd starter/backend
+        pipenv install
+        pipenv run test
 
   build:
     needs: [lint, test]
