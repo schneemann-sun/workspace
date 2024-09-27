@@ -44,7 +44,14 @@ jobs:
     needs: [lint, test]
     runs-on: ubuntu-latest
     steps:
-      - name: docker build
+      - name: Check Docker Version
+        run: docker --version
+      - name: Checkout Code
+        uses: actions/checkout@v3
+      - name: Cleanup Existing Docker Container
+        run: |
+          docker rm -f mp-frontend || true
+      - name: Docker Build
         run: |
           cd starter/frontend
           docker build --build-arg=REACT_APP_MOVIE_API_URL=http://localhost:5000 --tag=mp-frontend:latest .

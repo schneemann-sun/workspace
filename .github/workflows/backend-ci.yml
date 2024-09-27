@@ -18,7 +18,9 @@ jobs:
     - uses: actions/setup-python@v4
       with:
         python-version: '3.10'
-    - run: |
+    - name: lint
+      run: |
+        pip install pipenv
         cd starter/backend
         pipenv install
         pipenv run lint
@@ -32,6 +34,8 @@ jobs:
     - uses: actions/setup-python@v4
       with:
         python-version: '3.10'
+    - name: Install pipenv
+      run: pip install pipenv
     - run: |
         cd starter/backend
         pipenv install
@@ -41,16 +45,35 @@ jobs:
     needs: [lint, test]
     runs-on: ubuntu-latest
     steps:
-    # Checkout
-    - uses: actions/checkout@v3
-    # Build
-    - uses: actions/setup-python@v4
-      with:
-        python-version: '3.10'
-    - run: |
-        cd starter/backend
-        docker build --tag mp-backend:latest .
-        docker run -p 5000:5000 --name mp-backend -d mp-backend
-        curl http://localhost:5000/movies
-        docker logs -f mp-backend
-        docker stop
+      - name: Check Docker Version
+        run: docker --version
+        
+      - name: Checkout Code
+        uses: actions/checkout@v3
+        
+      - name: Cleanup Existing Docker Container
+        run: |
+          docker rm -f mp-backend || true
+          
+      - name: Docker Build
+        run: |
+          cd starter/backend
+          docker build --tag=mp-backend:latest .
+          
+      - name: Run Docker Container
+        run: |
+          docker run -p 5000:5000 --name mp-backend -d mp-backend
+          # Wait for the application to start
+          for i in {1..10}; do curl -s http://localhost:5000/movies && break || sleep 5; done
+          
+      - name: Check Movies Endpoint
+        run: |
+          curl http://localhost:5000/movies
+          
+      - name: Show Docker Logs
+        run: |
+          docker logs mp-backend
+          
+      - name: Stop Docker Container
+        run: |
+          docker stop mp-backend

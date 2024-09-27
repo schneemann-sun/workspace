@@ -40,20 +40,45 @@ jobs:
   build:
     needs: [lint, test]
     runs-on: ubuntu-latest
-    steps:      
+    env:
+      REACT_APP_MOVIE_API_URL: http://localhost:5000  # Set your environment variable here
+      ECR_URL: ${{ vars.ECR_URL }}  # Ensure this is set in your GitHub secrets
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
-      - name: deploy
+      - name: Check Docker Version
+        run: docker --version
+      - name: Check AWS CLI Version
+        run: aws --version
+      - name: Install Kustomize
+        run: |
+          curl -s "https://api.github.com/repos/kubernetes-sigs/kustomize/releases/latest" | \
+          grep "browser_download_url.*linux_amd64" | \
+          cut -d : -f 2,3 | \
+          tr -d \" | \
+          xargs curl -LO
+          # Assuming the downloaded file is in tar.gz format
+          tar -zxvf kustomize_*.tar.gz
+          chmod +x kustomize
+          sudo mv kustomize /usr/local/bin/
+      - name: Login to Amazon ECR
+        run: |
+          aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ vars.ECR_URL }}
+      - name: Push docker image
         run: |
           cd starter/frontend
-          docker build --build-arg=${{env.REACT_APP_MOVIE_API_URL}} --tag=$GITHUB_SHA .\
-          docker tag $GITHUB_SHA ${{vars.ECR_URL}}/frontend:$GITHUB_SHA
-          docker push ${{vars.ECR_URL}}/frontend:$GITHUB_SHA
+          docker build --build-arg REACT_APP_MOVIE_API_URL=${{ env.REACT_APP_MOVIE_API_URL }} --tag=$GITHUB_SHA .
+          docker tag $GITHUB_SHA ${{ vars.ECR_URL }}/frontend:$GITHUB_SHA
+          docker push ${{ vars.ECR_URL }}/frontend:$GITHUB_SHA
+      - name: Deploy to kubernetes cluster
+        run: |
           cd starter/frontend/k8s
-          aws eks update-kubeconfig
-          kustomize edit set image frontend=${{vars.ECR_URL}}/frontend:$GITHUB_SHA
-          kustomize build | kubectl apply -f .
+          aws eks update-kubeconfig --name cluster
+          kustomize edit set image frontend=${{ vars.ECR_URL }}/frontend:$GITHUB_SHA
+          kustomize build | kubectl apply -f . --validate=false
