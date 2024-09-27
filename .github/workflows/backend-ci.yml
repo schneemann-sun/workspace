@@ -1,0 +1,56 @@
+
+on:
+  workflow_dispatch:
+
+  pull_request:
+    branches:
+      - main
+    paths:
+      - starter/backend/**
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+    # Checkout
+    - uses: actions/checkout@v3
+    # Build
+    - uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+    - run: |
+      cd starter/backend
+      pipenv install
+      pipenv run lint
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    # Checkout
+    - uses: actions/checkout@v3
+    # Build
+    - uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+    - run: |
+      cd starter/backend
+      pipenv install
+      pipenv run test
+
+  build:
+    needs: [lint, test]
+    runs-on: ubuntu-latest
+    steps:
+    # Checkout
+    - uses: actions/checkout@v3
+    # Build
+    - uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+    - run: |
+      cd starter/backend
+      docker build --tag mp-backend:latest .
+      docker run -p 5000:5000 --name mp-backend -d mp-backend
+      curl http://localhost:5000/movies
+      docker logs -f mp-backend
+      docker stop
