@@ -3,7 +3,8 @@ export PATH="$HOME/.tfenv/bin:$PATH"
 source ~/.bashrc
 tfenv install 1.3.9
 tfenv use 1.3.9
-cd /workspace/setup/terraform
-terraform init
-terraform plan
-terraform apply
+# cd /workspace/setup/terraform
+# terraform init
+# terraform plan
+# terraform apply
+terraform destroy
