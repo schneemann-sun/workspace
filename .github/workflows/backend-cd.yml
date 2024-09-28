@@ -83,4 +83,4 @@ jobs:
           cd starter/backend/k8s
           aws eks update-kubeconfig --name cluster
           kustomize edit set image backend=${{vars.ECR_URL}}/backend:$GITHUB_SHA
-          kustomize build | kubectl apply -f .  --validate=false
+          kustomize build | kubectl apply -k .  --validate=false
