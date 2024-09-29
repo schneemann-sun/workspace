@@ -72,6 +72,9 @@ jobs:
       - name: Login to Amazon ECR
         run: |
           aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ vars.ECR_URL }}
+      - name: Cleanup Existing Docker Container
+        run: |
+          docker rm -f mp-backend || true
       - name: Push docker image
         run: |
           cd starter/backend
