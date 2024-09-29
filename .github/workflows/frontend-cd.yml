@@ -41,7 +41,7 @@ jobs:
     needs: [lint, test]
     runs-on: ubuntu-latest
     env:
-      REACT_APP_MOVIE_API_URL: http://localhost:5000  # Set your environment variable here
+      REACT_APP_MOVIE_API_URL: a6c2c3a8f787b442a89e6b4ca533d1d9-1542989495.us-east-1.elb.amazonaws.com  # Set your environment variable here
       ECR_URL: ${{ vars.ECR_URL }}  # Ensure this is set in your GitHub secrets
     steps:
       - name: Checkout Code
